@@ -117,7 +117,6 @@ void resetScene(BOOL random)
             memcpy32(&tile_mem[0][22*i+1], startingTiles+(640*i), 640/sizeof(u32));
     }
 
-
     // Wait for VBlank
     VBlankIntrWait();
 
@@ -140,8 +139,9 @@ void updateScene(void)
     // This is the screen "alternator" - even though it starts at 1, the first iteration will flip it to 0
     curScreen = !curScreen;
 
-    // Set up the backgorund - this will flip through both screens
-    REG_BG0CNT ^= BG_CBB(2);
+    // Set up the background - this will flip through both screens
+    if (curScreen == 1) REG_BG0CNT |= BG_CBB(2);
+    else REG_BG0CNT &= ~BG_CBB(2);
 
     // Count the number of operations
     REG_TM0D = 0;
