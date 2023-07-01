@@ -87,8 +87,12 @@ runs in under half of a frame's time, freeing a lot of time for an interactive a
 Demonstration
 ===
 
-- **First iteration:** no micro-optimizations besides the three main branches explained:
+- [**First iteration:**](https://github.com/JoaoBaptMG/gba-conway/blob/fb0bdf9c90cdf63efd399e79e464bf1de7af2388/source/conwaySimulationAdvance.s) no micro-optimizations besides the three main branches explained:
+  
   ![First demonstration: 129538 cycles, 46%](demo1a.webp) ![First demonstration: 129538 cycles, 46%](demo1b.webp)
+- [**Second iteration:**](source/conwaySimulationAdvance.s) saved one cycle on the condition for aliveness of a cell, shaving 4800 cycles total (but less than 2% of the CPU)
+  
+  ![First demonstration: 124738 cycles, 44%](demo2.webp)
 
 How to build the project
 ===

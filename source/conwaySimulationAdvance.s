@@ -56,14 +56,16 @@ conwaySimulationAdvance:
     @ Now we need to parallel-check for the Conway condition: alive ? (=2 or =3) : =3
     @ Since each cell's neighbor count fits in a 4-bit number (remember, we're a 4bpp tile buffer here),
     @ the 2 last bits must be 0; besides, bit1 is always 1, and bit0 must always be 1 (3 neighbors)
-    @ unless the actual cell state bit is 1 (allowing for 2 or 3 neighbors), so the condition to test is:
-    @ new_alive = !(n.3|n.2) & n.1 & (n.0|a)
+    @ unless the actual cell state bit is 1 (allowing for 2 or 3 neighbors).
+    @ Turns out we don't need to test for bit3 at all, because the only possible result where bit3 is
+    @ set is 8 (max 8 neighbors), and in that case bit1 will be 0, turning our condition false.
+    @ The condition to be tested then is:
+    @ new_alive = !n.2 & n.1 & (n.0|a)
     @ We're going to implement this in parallel now:
-    orr     r8, r7, r7, lsl #1      @ combine bit3 and bit2 into bit3
-    eor     r8, r8, r12, lsl #3     @ invert bit3 for the condition
+    eor     r8, r7, r12, lsl #2     @ invert bit2 for the condition
     orr     r7, r7, r4              @ bit0 now is or'd with the alive state
     and     r7, r7, r7, lsr #1      @ bit0 now has (bit0|a)&bit1
-    and     r7, r7, r8, lsr #3      @ bit0 now has the full condition up there
+    and     r7, r7, r8, lsr #2      @ bit0 now has the full condition up there
     and     r7, r7, r12             @ mask only the actual bits, so now r7 contains the new alive condition
 
     @ Store it in r1, making sure to advance the "stride", of the buffer
@@ -78,7 +80,7 @@ conwaySimulationAdvance:
     @ - r5 is the sum of the "middle" column
     @ - r6 is preserved as the current cell state (so we can subtract and use later)
     @ - r0 should point to the "right" column's data, ready to be used
-    @ this first half takes 26 cycles to process 8 cells, it should be kept under 32 cycles properly
+    @ this first half takes 25 cycles to process 8 cells, it should be kept under 32 cycles properly
 
     @ Do the first half of the cross-add right now, to free r3
     add     r8, r5, r5, lsl #4      @ shift the left neighbors
@@ -95,11 +97,10 @@ conwaySimulationAdvance:
     sub     r8, r8, r6              @ subtract the current state
 
     @ To the Conway condition as explained up there
-    orr     r9, r8, r8, lsl #1      @ 9.bit3 = n3|n2
-    eor     r9, r9, r12, lsl #3     @ 9.bit3 = !(n3|n2)
+    eor     r9, r8, r12, lsl #2     @ 9.bit2 = !n2
     orr     r8, r8, r6              @ 8.bit0 = n0|a
     and     r8, r8, r8, lsr #1      @ 8.bit0 = n1&(n0|a)
-    and     r8, r8, r9, lsr #3      @ 8.bit0 = !(n3|n2)&n1&(n0|a)
+    and     r8, r8, r9, lsr #2      @ 8.bit0 = !n2&n1&(n0|a)
     and     r8, r8, r12             @ mask the actual bits
 
     @ Now, same scheme, write it to r1 and advance it
@@ -127,11 +128,10 @@ conwaySimulationAdvance:
     sub     r8, r8, r4              @ subtract the current state
 
     @ To the Conway condition as explained up there
-    orr     r9, r8, r8, lsl #1      @ 9.bit3 = n3|n2
-    eor     r9, r9, r12, lsl #3     @ 9.bit3 = !(n3|n2)
+    eor     r9, r8, r12, lsl #2     @ 9.bit3 = !n2
     orr     r8, r8, r4              @ 8.bit0 = n0|a
     and     r8, r8, r8, lsr #1      @ 8.bit0 = n1&(n0|a)
-    and     r8, r8, r9, lsr #3      @ 8.bit0 = !(n3|n2)&n1&(n0|a)
+    and     r8, r8, r9, lsr #2      @ 8.bit0 = !n2&n1&(n0|a)
     and     r8, r8, r12             @ mask the actual bits
 
     @ Write it to r1 and advance it
@@ -156,11 +156,10 @@ conwaySimulationAdvance:
     sub     r7, r7, r6              @ subtract the actual state
 
     @ Implement Conway's condition one last time
-    orr     r8, r7, r7, lsl #1      @ combine bit3 and bit2 into bit3
-    eor     r8, r8, r12, lsl #3     @ invert bit3 for the condition
+    eor     r8, r7, r12, lsl #2     @ invert bit2 for the condition
     orr     r7, r7, r6              @ bit0 now is or'd with the alive state
     and     r7, r7, r7, lsr #1      @ bit0 now has (bit0|a)&bit1
-    and     r7, r7, r8, lsr #3      @ bit0 now has the full condition up there
+    and     r7, r7, r8, lsr #2      @ bit0 now has the full condition up there
     and     r7, r7, r12             @ mask only the actual bits, so now r7 contains the new alive condition
 
     @ Store in r1, but rollback the buffer stride
